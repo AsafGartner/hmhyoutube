@@ -1,0 +1,195 @@
+<html>
+<head>
+<style>
+</style>
+<script>
+
+var youtubeReady = false;
+var domReady = false;
+function onYouTubeIframeAPIReady() {
+    youtubeReady = true;
+    init();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    domReady = true;
+    init();
+});
+
+var player = null;
+var isPlaying = false;
+var playerReady = false;
+
+var markers = [];
+
+function init() {
+    if (youtubeReady && domReady) {
+        var markerEls = document.querySelectorAll(".marker");
+        for (var i = 0; i < markerEls.length; ++i) {
+            var el = markerEls[i];
+            var startTime = humanTimeToSeconds(el.getAttribute("data-time"));
+            var duration = (i + 1 < markerEls.length ? humanTimeToSeconds(markerEls[i+1].getAttribute("data-time")) - startTime : 0.1);
+
+            var marker = {
+                mask: el.querySelector(".mask"),
+                startTime: startTime,
+                duration: duration
+            };
+            markers.push(marker);
+
+            el.addEventListener("click", onMarkerClick);
+        }
+
+        player = new YT.Player("player", {
+            videoId: document.querySelector("#player").getAttribute("data-video-id"),
+            events: {
+                "onReady": onPlayerReady
+            }
+        });
+    }
+}
+
+function humanTimeToSeconds(humanTime) {
+    var elements = humanTime.split(":");
+    var result = 0;
+    for (var i = 0; i < elements.length; ++i) {
+        result = result * 60 + parseInt(elements[i], 10);
+    }
+    return result;
+}
+
+function onPlayerReady() {
+    playerReady = true;
+}
+
+function perFrame() {
+    if (playerReady) {
+        var time = player.getCurrentTime();
+        var lastMarker = markers[markers.length-1];
+        if (lastMarker.duration == 0.1) {
+            lastMarker.duration = player.getDuration() - lastMarker.startTime;
+        }
+        for (var i = 0; i < markers.length; ++i) {
+            var marker = markers[i];
+            var progress = Math.max(0, Math.min((time - marker.startTime) / marker.duration, 1));
+            marker.mask.style.width = 100 * progress + "%";
+        }
+    }
+
+    requestAnimationFrame(perFrame);
+}
+
+function onMarkerClick(ev) {
+    if (playerReady) {
+        var time = humanTimeToSeconds(ev.currentTarget.getAttribute("data-time"));
+        player.seekTo(time, true);
+    }
+}
+
+perFrame();
+</script>
+<script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
+
+<style>
+    .marker-line {
+
+    }
+    .marker {
+        position: relative;
+        text-decoration: none;
+        display: inline-block;
+        margin: 0;
+        padding: 0;
+    }
+
+    .marker .notplayed {
+        background-color: black;
+        color: white;
+        top: 0;
+        left: 0;
+        width: 300px;
+        padding: 5px;
+    }
+
+    .marker .played {
+        background-color: grey;
+        color: black;
+        width: 300px;
+        padding: 5px;
+    }
+
+    .marker .mask {
+        overflow: hidden;
+        position: absolute;
+        top: 0;
+        left: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    .swiper {
+        margin-top: 200px;
+    }
+</style>
+</head>
+<body>
+    <div id="player" data-video-id="N0K0eHnVc1Y"></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="0:11"><div class="notplayed">On determining which systems impact many other systems, and solidifying them early on (0:11)</div><div class="mask"><div class="played">On determining which systems impact many other systems, and solidifying them early on (0:11)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="2:45"><div class="notplayed">What Mike Acton had to say about the potential costliness of some game design decisions [see Resources, Molly Rocket] (2:45)</div><div class="mask"><div class="played">What Mike Acton had to say about the potential costliness of some game design decisions [see Resources, Molly Rocket] (2:45)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="7:43"><div class="notplayed">Recap our current situation and set the stage for solidifying Z (7:43)</div><div class="mask"><div class="played">Recap our current situation and set the stage for solidifying Z (7:43)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="9:54"><div class="notplayed">handmade_world_mode.cpp: Make AddStandardRoom generate some stairs (9:54)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Make AddStandardRoom generate some stairs (9:54)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="15:59"><div class="notplayed">Run the game and traverse the offset stairs (15:59)</div><div class="mask"><div class="played">Run the game and traverse the offset stairs (15:59)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="16:31"><div class="notplayed">handmade_world_mode.cpp: Make PlayWorld generate more layers of rooms (16:31)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Make PlayWorld generate more layers of rooms (16:31)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="17:18"><div class="notplayed">Run the game and see the mulitple layers (17:18)</div><div class="mask"><div class="played">Run the game and see the mulitple layers (17:18)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="18:14"><div class="notplayed">handmade_world_mode.cpp: Expand the TraversablePoint rectangles to fill the tiles and give them outlines (18:14)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Expand the TraversablePoint rectangles to fill the tiles and give them outlines (18:14)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="22:30"><div class="notplayed">handmade_render_group.cpp: Make PushRect multiply the Color by GlobalAlpha (22:30)</div><div class="mask"><div class="played">handmade_render_group.cpp: Make PushRect multiply the Color by GlobalAlpha (22:30)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="22:51"><div class="notplayed">Run the game and see that we're already in pretty good shape, but need to more clearly specify Z (22:51)</div><div class="mask"><div class="played">Run the game and see that we're already in pretty good shape, but need to more clearly specify Z (22:51)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="24:42"><div class="notplayed">handmade_world_mode.cpp: Make AddStandardRoom generate a hole in the ground (24:42)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Make AddStandardRoom generate a hole in the ground (24:42)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="29:15"><div class="notplayed">Run the game and look down through the hole (29:15)</div><div class="mask"><div class="played">Run the game and look down through the hole (29:15)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="30:01"><div class="notplayed">The snake just went up the stairs (!quote 492) (30:01)</div><div class="mask"><div class="played">The snake just went up the stairs (!quote 492) (30:01)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="30:24"><div class="notplayed">handmade_world_mode.cpp: Make UpdateAndRenderWorld draw the tiles green (30:24)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Make UpdateAndRenderWorld draw the tiles green (30:24)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="31:37"><div class="notplayed">Run the game and consider the problem with drawing down so far (31:37)</div><div class="mask"><div class="played">Run the game and consider the problem with drawing down so far (31:37)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="33:28"><div class="notplayed">handmade_world_mode.cpp: Make UpdateAndRenderWorld expand FadeBottomStartZ and FadeBottomEndZ (33:28)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Make UpdateAndRenderWorld expand FadeBottomStartZ and FadeBottomEndZ (33:28)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="34:21"><div class="notplayed">Profiler: Note that BeginSim and UpdateAndRenderWorld are slow (34:21)</div><div class="mask"><div class="played">Profiler: Note that BeginSim and UpdateAndRenderWorld are slow (34:21)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="38:28"><div class="notplayed">build.bat: Switch to -O2 find that we're now running at 60 FPS (38:28)</div><div class="mask"><div class="played">build.bat: Switch to -O2 find that we're now running at 60 FPS (38:28)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="39:59"><div class="notplayed">Profiler: Switch to the software renderer (39:59)</div><div class="mask"><div class="played">Profiler: Switch to the software renderer (39:59)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="41:01"><div class="notplayed">win32_handmade.cpp: Add more BEGIN_BLOCK and END_BLOCK pairs in Win32DisplayBufferInWindow (41:01)</div><div class="mask"><div class="played">win32_handmade.cpp: Add more BEGIN_BLOCK and END_BLOCK pairs in Win32DisplayBufferInWindow (41:01)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="43:24"><div class="notplayed">handmade_world_mode.cpp: Add more BEGIN_BLOCK and END_BLOCK pairs in UpdateAndRenderWorld (43:24)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Add more BEGIN_BLOCK and END_BLOCK pairs in UpdateAndRenderWorld (43:24)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="44:12"><div class="notplayed">Run the game, view those timings and find that brains are not taking much time (44:12)</div><div class="mask"><div class="played">Run the game, view those timings and find that brains are not taking much time (44:12)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="45:04"><div class="notplayed">handmade_debug.cpp: Make DrawTopClocksList calculate and display a cumulative percentage (45:04)</div><div class="mask"><div class="played">handmade_debug.cpp: Make DrawTopClocksList calculate and display a cumulative percentage (45:04)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="47:39"><div class="notplayed">handmade_debug.cpp: Make DrawTopClocksList call AddTooltip to draw this percentage (47:39)</div><div class="mask"><div class="played">handmade_debug.cpp: Make DrawTopClocksList call AddTooltip to draw this percentage (47:39)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="52:06"><div class="notplayed">Debugger: Step into DrawTopClocksList and find and investigate why our TextRect is not valid (52:06)</div><div class="mask"><div class="played">Debugger: Step into DrawTopClocksList and find and investigate why our TextRect is not valid (52:06)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="54:56"><div class="notplayed">handmade_debug.cpp: Make DrawTopClocksList set TextRect off GetTextSize (54:56)</div><div class="mask"><div class="played">handmade_debug.cpp: Make DrawTopClocksList set TextRect off GetTextSize (54:56)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="55:59"><div class="notplayed">handmade_debug_ui.cpp: Introduce a version of GetTextSize that takes a v2 At (55:59)</div><div class="mask"><div class="played">handmade_debug_ui.cpp: Introduce a version of GetTextSize that takes a v2 At (55:59)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="56:39"><div class="notplayed">handmade_debug_ui.cpp: Make AddTooltip draw a background (56:39)</div><div class="mask"><div class="played">handmade_debug_ui.cpp: Make AddTooltip draw a background (56:39)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="58:40"><div class="notplayed">handmade_debug.cpp: Make ToolTipTransform appear above everything (58:40)</div><div class="mask"><div class="played">handmade_debug.cpp: Make ToolTipTransform appear above everything (58:40)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:00:28"><div class="notplayed">Run the game and view our tooltip (1:00:28)</div><div class="mask"><div class="played">Run the game and view our tooltip (1:00:28)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:02:48"><div class="notplayed">handmade_sim_region.cpp: Add a TIMED_BLOCK for SimUnpack in BeginSim (1:02:48)</div><div class="mask"><div class="played">handmade_sim_region.cpp: Add a TIMED_BLOCK for SimUnpack in BeginSim (1:02:48)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:03:17"><div class="notplayed">handmade_sim_region.cpp: Make the PushArray calls in BeginSim do NoClear, and check that all of the necessary data is initialised (1:03:17)</div><div class="mask"><div class="played">handmade_sim_region.cpp: Make the PushArray calls in BeginSim do NoClear, and check that all of the necessary data is initialised (1:03:17)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:05:42"><div class="notplayed">Profiler: Find that BeginSim no longer takes so much time (1:05:42)</div><div class="mask"><div class="played">Profiler: Find that BeginSim no longer takes so much time (1:05:42)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:06:52"><div class="notplayed">handmade_world_mode.cpp: Add BEGIN_BLOCK and END_BLOCK pairs for EntityRendering and EntityPhysics in UpdateAndRenderWorld (1:06:52)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Add BEGIN_BLOCK and END_BLOCK pairs for EntityRendering and EntityPhysics in UpdateAndRenderWorld (1:06:52)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:08:18"><div class="notplayed">Profiler: Find that EntityRendering is taking up the lion's share of the time (1:08:18)</div><div class="mask"><div class="played">Profiler: Find that EntityRendering is taking up the lion's share of the time (1:08:18)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:11:07"><div class="notplayed">handmade_world_mode.cpp: Move the EntityRendering block down to look only at the Piece list (1:11:07)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Move the EntityRendering block down to look only at the Piece list (1:11:07)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:11:36"><div class="notplayed">handmade_world_mode.cpp: Add BEGIN_BLOCK and END_BLOCK pairs for CollisionRendering, VectorClear, and HitpointRendering in UpdateAndRenderWorld (1:11:36)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Add BEGIN_BLOCK and END_BLOCK pairs for CollisionRendering, VectorClear, and HitpointRendering in UpdateAndRenderWorld (1:11:36)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:12:33"><div class="notplayed">Profiler: Find that CollisionRendering is the hog (1:12:33)</div><div class="mask"><div class="played">Profiler: Find that CollisionRendering is the hog (1:12:33)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:12:47"><div class="notplayed">handmade_world_mode.cpp: Add BEGIN_BLOCK and END_BLOCK pairs for VolumeRendering and TraversableRendering in UpdateAndRenderWorld (1:12:47)</div><div class="mask"><div class="played">handmade_world_mode.cpp: Add BEGIN_BLOCK and END_BLOCK pairs for VolumeRendering and TraversableRendering in UpdateAndRenderWorld (1:12:47)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:13:34"><div class="notplayed">Profiler: Find that TraversableRendering is the most expensive (1:13:34)</div><div class="mask"><div class="played">Profiler: Find that TraversableRendering is the most expensive (1:13:34)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:14:33"><div class="notplayed">handmade_world_mode.cpp: #if 0 the PushRectOutline calls for the traversables (1:14:33)</div><div class="mask"><div class="played">handmade_world_mode.cpp: #if 0 the PushRectOutline calls for the traversables (1:14:33)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:15:35"><div class="notplayed">Consider turning on the optimiser just for these traversable drawing routines or blowing out the PushRect functions to be more explicit (1:15:35)</div><div class="mask"><div class="played">Consider turning on the optimiser just for these traversable drawing routines or blowing out the PushRect functions to be more explicit (1:15:35)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:16:19"><div class="notplayed">Q&A (1:16:19)</div><div class="mask"><div class="played">Q&A (1:16:19)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:17:21"><div class="notplayed">cmuratori @insobot Do you have a question for me? (1:17:21)</div><div class="mask"><div class="played">cmuratori @insobot Do you have a question for me? (1:17:21)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:17:28"><div class="notplayed">insobot @cmuratori: Duuuuude (1:17:28)</div><div class="mask"><div class="played">insobot @cmuratori: Duuuuude (1:17:28)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:17:34"><div class="notplayed">serge_rgb Q: How much longer does it take to build Handmade Hero with release optimizations? (1:17:34)</div><div class="mask"><div class="played">serge_rgb Q: How much longer does it take to build Handmade Hero with release optimizations? (1:17:34)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:18:24"><div class="notplayed">Debugger: Demo the insufficiency of MSVC's debug information in optimised builds (1:18:24)</div><div class="mask"><div class="played">Debugger: Demo the insufficiency of MSVC's debug information in optimised builds (1:18:24)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:22:59"><div class="notplayed">cubercaleb Q: The switch is -Zo (1:22:59)</div><div class="mask"><div class="played">cubercaleb Q: The switch is -Zo (1:22:59)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:23:46"><div class="notplayed">themarsalla Q: I missed the optimization due to buffering but I caught some stuff about the clear being bloated, but didn't catch what the fix was? (1:23:46)</div><div class="mask"><div class="played">themarsalla Q: I missed the optimization due to buffering but I caught some stuff about the clear being bloated, but didn't catch what the fix was? (1:23:46)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:24:13"><div class="notplayed">thesizik Q: Far-away floors turning transparent don't look quite right since you can see through them (1:24:13)</div><div class="mask"><div class="played">thesizik Q: Far-away floors turning transparent don't look quite right since you can see through them (1:24:13)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:24:43"><div class="notplayed">longboolean Q: When peering down the hole at the more transparent layers, you can see characters through those ground layers. My guess is you would want to mix with a "fog color\" instead of just making the tiles transparent? (1:24:43)</div><div class="mask"><div class="played">longboolean Q: When peering down the hole at the more transparent layers, you can see characters through those ground layers. My guess is you would want to mix with a "fog color\" instead of just making the tiles transparent? (1:24:43)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:25:24"><div class="notplayed">elyasm Q: Would LLVM work on Windows / Handmade Hero? (1:25:24)</div><div class="mask"><div class="played">elyasm Q: Would LLVM work on Windows / Handmade Hero? (1:25:24)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:27:18"><div class="notplayed">dandymcgee Q: What editor is most similar to 4coder, and how long did it take to pick it up? (1:27:18)</div><div class="mask"><div class="played">dandymcgee Q: What editor is most similar to 4coder, and how long did it take to pick it up? (1:27:18)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:28:22"><div class="notplayed">wellingguzman Q: Having many levels of rooms and having entities in each level actively executing, wouldn't that be heavy / expensive? Or have you think in a performance solution or a level limitation? (1:28:22)</div><div class="mask"><div class="played">wellingguzman Q: Having many levels of rooms and having entities in each level actively executing, wouldn't that be heavy / expensive? Or have you think in a performance solution or a level limitation? (1:28:22)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:29:17"><div class="notplayed">longboolean Q: Is there a way to tell the compiler to optimize just a particular section of the code? If not, how would you work around that? (1:29:17)</div><div class="mask"><div class="played">longboolean Q: Is there a way to tell the compiler to optimize just a particular section of the code? If not, how would you work around that? (1:29:17)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:31:07"><div class="notplayed">cubercaleb Q: Clang++ is worse. Honestly, why can't the PDB just say "Hey, you are at this instruction? Okay, the value is in this register / address or whatever\"? (1:31:07)</div><div class="mask"><div class="played">cubercaleb Q: Clang++ is worse. Honestly, why can't the PDB just say "Hey, you are at this instruction? Okay, the value is in this register / address or whatever\"? (1:31:07)</div></div></a></div>
+    <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:33:46"><div class="notplayed">Wind it down (1:33:46)</div><div class="mask"><div class="played">Wind it down (1:33:46)</div></div></a></div>
+</body>
+</html>
