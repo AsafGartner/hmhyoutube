@@ -3,21 +3,12 @@
 <!--
 TODO:
 * Make it look less like poo.
-* Put the markers next to the video and add auto-scrolling while it's playing.
+* Detect user interaction and don't scroll when the user doesn't want us to scroll!!!! <---- VERY IMPORTANT!!!!! (Maybe scroll a few seconds later? Is that a good idea? UX is hard)
 * Add a mode where only the current marker appears below the video.
 * Animations!!
 * Add a theater mode.
 -->
 <script>
-
-function Timer() {
-    this.rate = 1;
-    this.time = 0;
-}
-
-Timer.prototype.advance = function(delta) {
-    this.time += delta * this.rate;
-}
 
 var youtubeReady = false;
 var domReady = false;
@@ -31,10 +22,16 @@ document.addEventListener("DOMContentLoaded", function() {
     init();
 });
 
-var timer = new Timer();
+var timer = 0;
+var playbackRate = 1;
 var player = null;
 var isPlaying = false;
 var playerReady = false;
+
+var scrollTarget = null;
+var currentScroll = 0;
+var minScroll = 0;
+var maxScroll = null;
 
 var markers = [];
 
@@ -57,8 +54,12 @@ function init() {
             el.addEventListener("click", onMarkerClick);
         }
 
+        var videoWidth = document.body.offsetWidth - document.querySelector(".marker-list").offsetWidth;
+
         player = new YT.Player("player", {
             videoId: document.querySelector("#player").getAttribute("data-video-id"),
+            width: videoWidth,
+            height: videoWidth / 16 * 9,
             events: {
                 "onReady": onPlayerReady,
                 "onStateChange": onPlayerStateChange,
@@ -79,31 +80,37 @@ function humanTimeToSeconds(humanTime) {
 
 function onPlayerReady() {
     playerReady = true;
+    var markerList = document.querySelector(".marker-list");
+    markerList.style.height = document.querySelector("#player").offsetHeight;
+    markerList.scrollTop = 0;
+    maxScroll = markerList.scrollHeight - markerList.offsetHeight;
 }
 
 function onPlayerStateChange(ev) {
     if (ev.data == 1) {
         isPlaying = true;
-        timer.time = player.getCurrentTime();
+        timer = player.getCurrentTime();
     } else {
         isPlaying = false;
     }
 }
 
 function onPlayerPlaybackRateChange(ev) {
-    timer.rate = ev.data;
+    playbackRate = ev.data;
 }
 
 function onMarkerClick(ev) {
     if (playerReady) {
         var time = humanTimeToSeconds(ev.currentTarget.getAttribute("data-time"));
         player.seekTo(time, true);
-        timer.time = time;
+        timer = time;
+
+        if (!isPlaying) {
+            player.playVideo();
+        }
     }
 }
 
-var scrollTarget = null;
-var currentScroll = 0;
 var lastFrameTime = 0;
 function perFrame() {
     if (scrollTarget !== null) {
@@ -117,10 +124,10 @@ function perFrame() {
     if (playerReady) {
         var now = performance.now();
         if (isPlaying) {
-            timer.advance((now - lastFrameTime) / 1000);
+            timer += ((now - lastFrameTime) / 1000) * playbackRate;
         }
         lastFrameTime = now;
-        var time = timer.time;
+        var time = timer;
         var lastMarker = markers[markers.length-1];
         if (lastMarker.duration == 0.1) {
             lastMarker.duration = player.getDuration() - lastMarker.startTime;
@@ -131,8 +138,9 @@ function perFrame() {
             if (progress >= 0 && progress < 1) {
                 if (!marker.el.classList.contains("current")) {
                     marker.el.classList.add("current");
-                    scrollTarget = marker.el.offsetTop - document.querySelector(".marker-list").offsetHeight / 2 + marker.el.offsetHeight / 2;
+                    scrollTarget = Math.max(minScroll, Math.min(marker.el.offsetTop - document.querySelector(".marker-list").offsetHeight / 2 + marker.el.offsetHeight / 2, maxScroll));
                     currentScroll = document.querySelector(".marker-list").scrollTop;
+                    document.querySelector(".bottom-annotations .content").textContent = marker.el.querySelector(".notplayed").textContent;
                 }
             } else {
                 marker.el.classList.remove("current");
@@ -152,15 +160,21 @@ perFrame();
 
 <style>
 
-    #player {
-        vertical-align: middle;
+    body {
+        font-family: sans-serif;
+        background-color: grey;
+    }
+
+    .player-container {
+        vertical-align: top;
+        display: inline-block;
     }
 
     .marker-list {
         display: inline-block;
-        vertical-align: middle;
+        vertical-align: top;
         overflow-y: scroll;
-        height: 400px;
+        height: 1px;
     }
 
     .marker {
@@ -176,7 +190,7 @@ perFrame();
         color: white;
         top: 0;
         left: 0;
-        width: 300px;
+        width: 400px;
         padding: 5px;
     }
 
@@ -185,9 +199,9 @@ perFrame();
     }
 
     .marker .played {
-        background-color: grey;
+        background-color: darkgrey;
         color: black;
-        width: 300px;
+        width: 400px;
         padding: 5px;
     }
 
@@ -200,8 +214,14 @@ perFrame();
         padding: 0;
     }
 
-    .swiper {
-        margin-top: 200px;
+    .bottom-annotations {
+        width: 100%;
+        background-color: rgba(0, 0, 0, 0.3);
+        color: white;
+    }
+
+    .bottom-annotations .content {
+        padding: 20px;
     }
 </style>
 </head>
@@ -264,7 +284,6 @@ perFrame();
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:29:17"><div class="notplayed">longboolean Q: Is there a way to tell the compiler to optimize just a particular section of the code? If not, how would you work around that? (1:29:17)</div><div class="mask"><div class="played">longboolean Q: Is there a way to tell the compiler to optimize just a particular section of the code? If not, how would you work around that? (1:29:17)</div></div></a></div>
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:31:07"><div class="notplayed">cubercaleb Q: Clang++ is worse. Honestly, why can't the PDB just say "Hey, you are at this instruction? Okay, the value is in this register / address or whatever\"? (1:31:07)</div><div class="mask"><div class="played">cubercaleb Q: Clang++ is worse. Honestly, why can't the PDB just say "Hey, you are at this instruction? Okay, the value is in this register / address or whatever\"? (1:31:07)</div></div></a></div>
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:33:46"><div class="notplayed">Wind it down (1:33:46)</div><div class="mask"><div class="played">Wind it down (1:33:46)</div></div></a></div>
-    </div>
-    <div id="player" data-video-id="N0K0eHnVc1Y"></div>
+    </div><div class="player-container"><div id="player" data-video-id="N0K0eHnVc1Y"></div><div class="bottom-annotations"><div class="content"></div></div></div>
 </body>
 </html>
