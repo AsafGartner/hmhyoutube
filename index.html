@@ -4,6 +4,15 @@
 </style>
 <script>
 
+function Timer() {
+    this.rate = 1;
+    this.time = 0;
+}
+
+Timer.prototype.advance = function(delta) {
+    this.time += delta * this.rate;
+}
+
 var youtubeReady = false;
 var domReady = false;
 function onYouTubeIframeAPIReady() {
@@ -16,6 +25,7 @@ document.addEventListener("DOMContentLoaded", function() {
     init();
 });
 
+var timer = new Timer();
 var player = null;
 var isPlaying = false;
 var playerReady = false;
@@ -43,7 +53,9 @@ function init() {
         player = new YT.Player("player", {
             videoId: document.querySelector("#player").getAttribute("data-video-id"),
             events: {
-                "onReady": onPlayerReady
+                "onReady": onPlayerReady,
+                "onStateChange": onPlayerStateChange,
+                "onPlaybackRateChange": onPlayerPlaybackRateChange
             }
         });
     }
@@ -62,9 +74,35 @@ function onPlayerReady() {
     playerReady = true;
 }
 
+function onPlayerStateChange(ev) {
+    if (ev.data == 1) {
+        isPlaying = true;
+        timer.time = player.getCurrentTime();
+    } else {
+        isPlaying = false;
+    }
+}
+
+function onPlayerPlaybackRateChange(ev) {
+    timer.rate = ev.data;
+}
+
+function onMarkerClick(ev) {
+    if (playerReady) {
+        var time = humanTimeToSeconds(ev.currentTarget.getAttribute("data-time"));
+        player.seekTo(time, true);
+    }
+}
+
+var lastFrameTime = 0;
 function perFrame() {
     if (playerReady) {
-        var time = player.getCurrentTime();
+        var now = performance.now();
+        if (isPlaying) {
+            timer.advance((now - lastFrameTime) / 1000);
+        }
+        lastFrameTime = now;
+        var time = timer.time;
         var lastMarker = markers[markers.length-1];
         if (lastMarker.duration == 0.1) {
             lastMarker.duration = player.getDuration() - lastMarker.startTime;
@@ -79,13 +117,7 @@ function perFrame() {
     requestAnimationFrame(perFrame);
 }
 
-function onMarkerClick(ev) {
-    if (playerReady) {
-        var time = humanTimeToSeconds(ev.currentTarget.getAttribute("data-time"));
-        player.seekTo(time, true);
-    }
-}
-
+lastFrameTime = performance.now();
 perFrame();
 </script>
 <script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
