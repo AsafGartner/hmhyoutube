@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", function() {
     init();
 });
 
+/*
 if (!location.hash || location.hash.length == 0) {
     document.write("<h2 style='color: white;'>Usage:<br/>&nbsp;&nbsp;Append `#[full_url_to_raw_html_md_annotation_file]` to the url<br/>&nbsp;&nbsp;Example: `/player#https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/src/documents/videos/game-architecture/day027.html.md`</h2>")
 } else {
@@ -70,6 +71,9 @@ if (!location.hash || location.hash.length == 0) {
     markersReady = true;
     init();
 }
+*/
+markersReady = true;
+init();
 
 var timer = 0;
 var playbackRate = 1;
