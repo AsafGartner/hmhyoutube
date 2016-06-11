@@ -5,13 +5,21 @@ TODO:
 * Make it look less like poo.
 * Detect user interaction and don't scroll when the user doesn't want us to scroll!!!! <---- VERY IMPORTANT!!!!! (Maybe scroll a few seconds later? Is that a good idea? UX is hard)
 * Add a mode where only the current marker appears below the video.
+* Add title.
+* Add area for general notes.
 * Animations!!
-* Add a theater mode.
+* Properly handle the video ending.
 -->
 <script>
 
+var videoInfo = {
+    title: null,
+    videoId: null,
+    markers: []
+};
 var youtubeReady = false;
 var domReady = false;
+var markersReady = false;
 function onYouTubeIframeAPIReady() {
     youtubeReady = true;
     init();
@@ -21,6 +29,47 @@ document.addEventListener("DOMContentLoaded", function() {
     domReady = true;
     init();
 });
+
+if (!location.hash || location.hash.length == 0) {
+    document.write("<h2 style='color: white;'>Usage:<br/>&nbsp;&nbsp;Append `#[full_url_to_raw_html_md_annotation_file]` to the url<br/>&nbsp;&nbsp;Example: `/player#https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/src/documents/videos/game-architecture/day027.html.md`</h2>")
+} else {
+    var annotationsFile = location.hash;
+    if (annotationsFile.startsWith("#")) {
+        annotationsFile = annotationsFile.slice(1);
+    }
+
+    var xhr = new XMLHttpRequest();
+    xhr.open("GET", annotationsFile, true);
+    xhr.overrideMimeType("text/plain; charset=x-user-defined");
+    xhr.onreadystatechange = function(e) {
+        if (this.readyState == 4 && this.status == 200) {
+            var str = this.responseText;
+            var lines = str.split("\n");
+            videoInfo = {
+                title: null,
+                videoId: null,
+                markers: []
+            };
+            var inMarkers = false;
+            for (var i = 0; i < lines.length; ++i) {
+                if (lines[i].startWith("title")) {
+                    videoInfo.title = lines[i].split(": ")[1].replace("\"", "");
+                } else if (lines[i].startWith("videoId")) {
+                    videoInfo.videoId = lines[i].split(": ")[1].replace("\"", "");
+                } else if (lines[i].startWith("markers")) {
+                    inMarkers = true;
+                } else if (lines[i].startWith("---") && inMarkers) {
+                    inMarkers = false;
+                } else if (inMarkers) {
+
+                }
+            }
+        }
+    };
+    xhr.send();
+    markersReady = true;
+    init();
+}
 
 var timer = 0;
 var playbackRate = 1;
@@ -36,7 +85,7 @@ var maxScroll = null;
 var markers = [];
 
 function init() {
-    if (youtubeReady && domReady) {
+    if (youtubeReady && domReady && markersReady) {
         var markerEls = document.querySelectorAll(".marker");
         for (var i = 0; i < markerEls.length; ++i) {
             var el = markerEls[i];
@@ -136,18 +185,19 @@ function perFrame() {
         for (var i = 0; i < markers.length; ++i) {
             var marker = markers[i];
             var progress = (time - marker.startTime) / marker.duration;
+            var clampedProgress = Math.max(0, Math.min(progress, 1));
             if (progress >= 0 && progress < 1) {
                 if (!marker.el.classList.contains("current")) {
                     marker.el.classList.add("current");
                     scrollTarget = Math.max(minScroll, Math.min(marker.el.offsetTop - document.querySelector(".marker-list").offsetHeight / 2 + marker.el.offsetHeight / 2, maxScroll));
                     currentScroll = document.querySelector(".marker-list").scrollTop;
-                    document.querySelector(".bottom-annotations .content").textContent = marker.el.querySelector(".notplayed").textContent;
+                    document.querySelector(".bottom-annotations .content .marker-text").textContent = marker.el.querySelector(".notplayed").textContent;
                 }
+                document.querySelector(".bottom-annotations .progress .filler").style.width = 100 * clampedProgress + "%";
             } else {
                 marker.el.classList.remove("current");
             }
-            progress = Math.max(0, Math.min(progress, 1));
-            marker.mask.style.width = 100 * progress + "%";
+            marker.mask.style.width = 100 * clampedProgress + "%";
         }
     }
 
@@ -163,7 +213,7 @@ perFrame();
 
     body {
         font-family: sans-serif;
-        background-color: grey;
+        background-color: #222222;
     }
 
     .player-container {
@@ -184,25 +234,36 @@ perFrame();
         display: inline-block;
         margin: 0;
         padding: 0;
+        font-size: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .marker:hover .notplayed, .marker:hover .played {
+        background-color: #222222;
     }
 
     .marker .notplayed {
-        background-color: black;
-        color: white;
+        background-color: #161616;
+        color: #8A877D;
         top: 0;
         left: 0;
-        width: 400px;
+        width: 300px;
         padding: 5px;
     }
 
     .marker.current .notplayed {
-        background-color: blue;
+        color: #B57714;
+    }
+
+    .marker.current .played {
+        background-color: #8B3D23;
+        color: black;
     }
 
     .marker .played {
-        background-color: darkgrey;
-        color: black;
-        width: 400px;
+        background-color: #161616;
+        color: #8A877D;
+        width: 300px;
         padding: 5px;
     }
 
@@ -217,17 +278,45 @@ perFrame();
 
     .bottom-annotations {
         width: 100%;
-        background-color: rgba(0, 0, 0, 0.3);
+        background-color: #161616;
         color: white;
     }
 
     .bottom-annotations .content {
-        padding: 20px;
+        padding: 10px;
+        display: flex;
+        flex-direction: row;
+        align-items: top;
+    }
+
+    .bottom-annotations .progress {
+        flex-shrink: 0;
+        width: 150px;
+        height: 10px;
+        border: 2px solid #8A877D;
+        background-color: #161616;
+        border-radius: 20px;
+        overflow: hidden;
+        margin-left: 20px;
+        margin-top: 3px;
+    }
+
+    .bottom-annotations .progress .filler {
+        background-color: #8B3D23;
+        height: 100%;
+        width: 0%;
+    }
+
+    .bottom-annotations .marker-text {
+        flex-grow: 1;
+        min-height: 40px;
+        font-size: 16px;
+        color: #8A877D;
     }
 </style>
 </head>
 <body>
-    <div class="marker-list">
+    <div class="player-container"><div id="player" data-video-id="N0K0eHnVc1Y"></div><div class="bottom-annotations"><div class="content"><span class="marker-text"></span><div class="progress"><div class="filler"></div></div></div></div></div><div class="marker-list">
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="0:11"><div class="notplayed">On determining which systems impact many other systems, and solidifying them early on (0:11)</div><div class="mask"><div class="played">On determining which systems impact many other systems, and solidifying them early on (0:11)</div></div></a></div>
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="2:45"><div class="notplayed">What Mike Acton had to say about the potential costliness of some game design decisions [see Resources, Molly Rocket] (2:45)</div><div class="mask"><div class="played">What Mike Acton had to say about the potential costliness of some game design decisions [see Resources, Molly Rocket] (2:45)</div></div></a></div>
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="7:43"><div class="notplayed">Recap our current situation and set the stage for solidifying Z (7:43)</div><div class="mask"><div class="played">Recap our current situation and set the stage for solidifying Z (7:43)</div></div></a></div>
@@ -285,6 +374,6 @@ perFrame();
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:29:17"><div class="notplayed">longboolean Q: Is there a way to tell the compiler to optimize just a particular section of the code? If not, how would you work around that? (1:29:17)</div><div class="mask"><div class="played">longboolean Q: Is there a way to tell the compiler to optimize just a particular section of the code? If not, how would you work around that? (1:29:17)</div></div></a></div>
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:31:07"><div class="notplayed">cubercaleb Q: Clang++ is worse. Honestly, why can't the PDB just say "Hey, you are at this instruction? Okay, the value is in this register / address or whatever"? (1:31:07)</div><div class="mask"><div class="played">cubercaleb Q: Clang++ is worse. Honestly, why can't the PDB just say "Hey, you are at this instruction? Okay, the value is in this register / address or whatever\"? (1:31:07)</div></div></a></div>
         <div class="marker-line"><a class="marker" href="javascript:;" data-time="1:33:46"><div class="notplayed">Wind it down (1:33:46)</div><div class="mask"><div class="played">Wind it down (1:33:46)</div></div></a></div>
-    </div><div class="player-container"><div id="player" data-video-id="N0K0eHnVc1Y"></div><div class="bottom-annotations"><div class="content"></div></div></div>
+    </div>
 </body>
 </html>
